@@ -57,6 +57,7 @@ logs/
 !outputs/pdf/.gitkeep
 !outputs/excel/.gitkeep
 !outputs/dashboard/.gitkeep
+!logs/.gitkeep
 
 # --- Testing / Coverage ---
 .pytest_cache/

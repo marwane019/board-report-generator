@@ -1,0 +1,65 @@
+# =============================================================================
+# .dockerignore — board-report-generator
+# Keeps the Docker build context lean: excludes dev artefacts, secrets,
+# generated outputs, and CI/infra config that have no place in the image.
+# =============================================================================
+
+# ── Version control ───────────────────────────────────────────────────────────
+.git/
+.gitignore
+
+# ── CI / deployment config (not needed inside the container) ─────────────────
+.github/
+azure/
+
+# ── Python bytecode ───────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# ── Virtual environments ──────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Secrets (never bake credentials into an image) ───────────────────────────
+.env
+.env.*
+secrets.yaml
+credentials.yaml
+
+# ── Generated outputs (rebuilt at runtime on every pipeline run) ──────────────
+data/raw/*.csv
+data/processed/
+data/output/*.pdf
+data/output/*.xlsx
+data/output/*.html
+
+# ── Log files ─────────────────────────────────────────────────────────────────
+logs/
+*.log
+
+# ── Test artefacts ────────────────────────────────────────────────────────────
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+
+# ── IDE and OS files ──────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Documentation (saves a few KB; regenerate from source if needed) ──────────
+README.md
+*.md
+
+# ── n8n workflow (infra config, not application code) ────────────────────────
+n8n_workflow.json

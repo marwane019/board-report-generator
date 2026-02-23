@@ -1,0 +1,253 @@
+# =============================================================================
+# .github/workflows/azure-deploy.yml
+#
+# CI/CD pipeline for board-report-generator
+#
+# Trigger matrix:
+#   Pull request  → runs tests only (no build, no deploy)
+#   Push to main  → runs tests, builds Docker image, pushes to ACR, deploys
+#
+# Required GitHub Secrets (Settings → Secrets and variables → Actions):
+#   AZURE_CREDENTIALS    Service principal JSON from `az ad sp create-for-rbac`
+#   ACR_LOGIN_SERVER     e.g. boardreportacr.azurecr.io
+#   ACR_USERNAME         ACR admin username
+#   ACR_PASSWORD         ACR admin password
+#
+# Optional GitHub Secrets (pipeline runs in dry-run mode if absent):
+#   SMTP_HOST            e.g. smtp.gmail.com
+#   SMTP_PORT            e.g. 587
+#   SMTP_USER            Sending email address
+#   SMTP_PASSWORD        App password / SMTP password
+#   SLACK_WEBHOOK_URL    Incoming webhook URL
+#   CODECOV_TOKEN        Coverage reporting (public repos can omit this)
+#
+# Resources created by azure/provision.sh (run once before first push):
+#   Resource group:   rg-board-report
+#   ACR:              boardreportacr (Basic tier)
+#   App Service Plan: asp-board-report (B1 Linux)
+#   Web App:          board-report-generator-app
+# =============================================================================
+
+name: CI/CD — Board Report Generator
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+# Cancel in-progress runs on the same branch when a new commit arrives.
+# Prevents wasted CI minutes on stale runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# ── Shared constants ──────────────────────────────────────────────────────────
+env:
+  # Must exactly match the App Service name created by azure/provision.sh
+  AZURE_WEBAPP_NAME: board-report-generator-app
+  RESOURCE_GROUP: rg-board-report
+  IMAGE_NAME: board-report-generator
+  PYTHON_VERSION: "3.11"
+
+# =============================================================================
+# Job 1: Test suite
+# Runs on every push and pull_request. Fails fast if tests regress.
+# =============================================================================
+jobs:
+  test:
+    name: "Test suite (Python ${{ env.PYTHON_VERSION }})"
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── Checkout ────────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Python setup ────────────────────────────────────────────────────────
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip                    # Caches ~/.cache/pip between runs
+
+      # ── Dependencies ────────────────────────────────────────────────────────
+      - name: Install dependencies
+        run: pip install --no-cache-dir -r requirements.txt
+
+      # ── Tests ───────────────────────────────────────────────────────────────
+      - name: Run pytest with coverage
+        env:
+          # Non-interactive matplotlib backend — no display in CI
+          MPLBACKEND: Agg
+          PYTHONUNBUFFERED: "1"
+        run: |
+          pytest tests/ \
+            --verbose \
+            --tb=short \
+            --cov=src \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-fail-under=80
+
+      # ── Coverage upload ──────────────────────────────────────────────────────
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: coverage.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+# =============================================================================
+# Job 2: Build Docker image → Push to ACR → Deploy to App Service
+# Runs ONLY on push to main/master, after tests pass.
+# =============================================================================
+  build-and-deploy:
+    name: "Build → ACR → App Service"
+    needs: test
+    # Only deploy from the default branch, not PRs
+    if: >
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── Checkout ────────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Azure login ──────────────────────────────────────────────────────────
+      # AZURE_CREDENTIALS is a JSON service principal created by:
+      #   az ad sp create-for-rbac --name sp-board-report-cicd \
+      #     --role contributor \
+      #     --scopes /subscriptions/{id}/resourceGroups/rg-board-report \
+      #     --sdk-auth
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # ── ACR login ────────────────────────────────────────────────────────────
+      - name: Log in to Azure Container Registry
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      # ── Build image ──────────────────────────────────────────────────────────
+      # Two tags per build:
+      #   :latest  — always points to the most recent push on main
+      #   :{sha}   — immutable, used for the actual App Service deployment
+      #              (enables rollback by deploying a previous SHA tag)
+      - name: Build Docker image
+        run: |
+          docker build \
+            --tag "${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest" \
+            --tag "${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" \
+            --label "org.opencontainers.image.revision=${{ github.sha }}" \
+            --label "org.opencontainers.image.ref.name=${{ github.ref }}" \
+            --label "org.opencontainers.image.created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            .
+
+      # ── Push to ACR ───────────────────────────────────────────────────────────
+      - name: Push image to ACR
+        run: |
+          docker push "${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest"
+          docker push "${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+
+      # ── Sync App Service environment variables ────────────────────────────────
+      # App settings are idempotent — safe to re-apply on every deploy.
+      # Credentials come from GitHub Secrets, never hardcoded.
+      # If an optional secret is absent, an empty string is set, which
+      # triggers the pipeline's built-in dry-run mode for that channel.
+      - name: Configure App Service environment variables
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          resource-group-name: ${{ env.RESOURCE_GROUP }}
+          app-settings-json: |
+            [
+              {
+                "name": "WEBSITES_PORT",
+                "value": "8000",
+                "slotSetting": false
+              },
+              {
+                "name": "PYTHONUNBUFFERED",
+                "value": "1",
+                "slotSetting": false
+              },
+              {
+                "name": "MPLBACKEND",
+                "value": "Agg",
+                "slotSetting": false
+              },
+              {
+                "name": "LOG_LEVEL",
+                "value": "INFO",
+                "slotSetting": false
+              },
+              {
+                "name": "SMTP_HOST",
+                "value": "${{ secrets.SMTP_HOST }}",
+                "slotSetting": false
+              },
+              {
+                "name": "SMTP_PORT",
+                "value": "${{ secrets.SMTP_PORT || '587' }}",
+                "slotSetting": false
+              },
+              {
+                "name": "SMTP_USER",
+                "value": "${{ secrets.SMTP_USER }}",
+                "slotSetting": false
+              },
+              {
+                "name": "SMTP_PASSWORD",
+                "value": "${{ secrets.SMTP_PASSWORD }}",
+                "slotSetting": false
+              },
+              {
+                "name": "SLACK_WEBHOOK_URL",
+                "value": "${{ secrets.SLACK_WEBHOOK_URL }}",
+                "slotSetting": false
+              }
+            ]
+
+      # ── Deploy container ───────────────────────────────────────────────────────
+      # Deploys the SHA-tagged image (not :latest) for full traceability.
+      # App Service pulls the image from ACR and performs a rolling restart.
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          images: "${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+
+      # ── Post-deploy verification ───────────────────────────────────────────────
+      - name: Verify deployment
+        run: |
+          echo "──────────────────────────────────────────────────"
+          echo "  Deployment summary"
+          echo "──────────────────────────────────────────────────"
+          az webapp show \
+            --name "${{ env.AZURE_WEBAPP_NAME }}" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --query "{
+              state: state,
+              hostName: defaultHostName,
+              lastModified: lastModifiedTimeUtc
+            }" \
+            --output table
+          echo "  Image: ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          echo "──────────────────────────────────────────────────"
+
+      # ── Azure logout ──────────────────────────────────────────────────────────
+      - name: Log out of Azure
+        if: always()
+        run: az logout
