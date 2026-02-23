@@ -57,7 +57,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
 
       - name: Install dependencies
         run: pip install --no-cache-dir -r requirements.txt
@@ -79,13 +78,6 @@ jobs:
             --cov-report=xml \
             --cov-fail-under=35
 
-      - name: Upload coverage report
-        uses: codecov/codecov-action@v4
-        if: always()
-        with:
-          files: coverage.xml
-          fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}
 
 # =============================================================================
 # Job 2: Build + Push + Deploy  (push to main/master or manual dispatch only)
