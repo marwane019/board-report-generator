@@ -1,0 +1,34 @@
+# =============================================================================
+# Automated Board Report Generator — Python Dependencies
+# Install with: pip install -r requirements.txt
+# Tested on Python 3.11+
+# =============================================================================
+
+# Core data processing
+pandas>=2.0.0
+numpy>=1.26.0
+
+# Configuration
+PyYAML>=6.0.1
+
+# PDF generation (ReportLab — pure Python, no system dependencies)
+reportlab>=4.0.0
+
+# Chart generation for PDF embedding
+matplotlib>=3.8.0
+
+# Interactive HTML dashboard
+plotly>=5.18.0
+
+# Excel data pack
+openpyxl>=3.1.2
+
+# HTTP requests (Slack webhook)
+requests>=2.31.0
+
+# Scheduling
+APScheduler>=3.10.4
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0

@@ -1,0 +1,311 @@
+{
+  "name": "Board Report Generator — Weekly Dispatch",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "node_cron_trigger",
+      "name": "Every Monday 06:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "notes": "Fires every Monday at 06:00. Adjust timezone in n8n instance settings (Europe/London)."
+    },
+    {
+      "parameters": {
+        "command": "cd /opt/board-report-generator && python main.py --full-run --config config.yaml 2>&1"
+      },
+      "id": "node_run_pipeline",
+      "name": "Run Full Pipeline",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "notes": "Runs the complete pipeline: data generation → KPIs → PDF → Excel → dashboard → distribution."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.exitCode }}",
+              "operation": "equal",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "node_check_exit_code",
+      "name": "Pipeline Succeeded?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "webhookUri": "={{ $env.SLACK_WEBHOOK_URL }}",
+        "text": "",
+        "blocksUi": {
+          "blocksValues": [
+            {
+              "type": "header",
+              "text": {
+                "type": "plain_text",
+                "text": "✅ Board Report Dispatched"
+              }
+            },
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "*Weekly board report generated and distributed successfully.*\n\nPDF + Excel pack sent to all configured recipients. Interactive dashboard updated."
+              }
+            },
+            {
+              "type": "context",
+              "elements": [
+                {
+                  "type": "mrkdwn",
+                  "text": "🕐 Completed: {{ $now.toISO() }} | Pipeline: board-report-generator"
+                }
+              ]
+            }
+          ]
+        },
+        "otherOptions": {}
+      },
+      "id": "node_slack_success",
+      "name": "Slack — Pipeline OK",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [900, 180],
+      "notes": "Posts a success notification to the ops Slack channel."
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "webhookUri": "={{ $env.SLACK_WEBHOOK_URL }}",
+        "text": "",
+        "blocksUi": {
+          "blocksValues": [
+            {
+              "type": "header",
+              "text": {
+                "type": "plain_text",
+                "text": "🔴 Board Report Pipeline FAILED"
+              }
+            },
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "*The weekly board report pipeline failed. Immediate investigation required.*\n\n*Exit code:* `{{ $json.exitCode }}`\n\n*Error output (last 500 chars):*\n```{{ $json.stderr.slice(-500) }}```"
+              }
+            },
+            {
+              "type": "section",
+              "fields": [
+                {
+                  "type": "mrkdwn",
+                  "text": "*Server:* {{ $env.HOSTNAME || 'Unknown' }}"
+                },
+                {
+                  "type": "mrkdwn",
+                  "text": "*Timestamp:* {{ $now.toISO() }}"
+                }
+              ]
+            },
+            {
+              "type": "actions",
+              "elements": [
+                {
+                  "type": "button",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "View Logs"
+                  },
+                  "url": "{{ $env.LOG_VIEWER_URL || 'https://your-log-viewer.example.com' }}"
+                }
+              ]
+            }
+          ]
+        },
+        "otherOptions": {}
+      },
+      "id": "node_slack_failure",
+      "name": "Slack — Pipeline FAILED",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [900, 420],
+      "notes": "Pages the ops team on failure. Set LOG_VIEWER_URL env var for deep-link to logs."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.stdout }}",
+              "operation": "contains",
+              "value2": "RAG:RED"
+            }
+          ]
+        }
+      },
+      "id": "node_check_red_rag",
+      "name": "Any RED KPIs?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1120, 180],
+      "notes": "Checks pipeline stdout for RED-status KPIs. The pipeline emits 'RAG:RED' log lines when critical thresholds are breached."
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "webhookUri": "={{ $env.SLACK_EXEC_WEBHOOK_URL }}",
+        "text": "",
+        "blocksUi": {
+          "blocksValues": [
+            {
+              "type": "header",
+              "text": {
+                "type": "plain_text",
+                "text": "🚨 Board Report — RED KPI Alert"
+              }
+            },
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "*One or more KPIs have breached RED thresholds in this week's board report.*\n\nThe board pack has been distributed. Please review the executive summary section."
+              }
+            },
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "🔴 metrics in breach — see full report for detail."
+              }
+            },
+            {
+              "type": "context",
+              "elements": [
+                {
+                  "type": "mrkdwn",
+                  "text": "Generated: {{ $now.toISO() }} | Pipeline: board-report-generator"
+                }
+              ]
+            }
+          ]
+        },
+        "otherOptions": {}
+      },
+      "id": "node_slack_red_alert",
+      "name": "Slack — RED KPI Executive Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [1340, 100],
+      "notes": "Posts to the executive Slack channel (SLACK_EXEC_WEBHOOK_URL) when RED KPIs are present. Separate from the standard ops notification."
+    },
+    {
+      "parameters": {
+        "command": "cd /opt/board-report-generator && python main.py --full-run --config config.yaml 2>&1",
+        "options": {}
+      },
+      "id": "node_manual_trigger_note",
+      "name": "Sticky Note — Manual Trigger",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [240, 520],
+      "parameters": {
+        "content": "## Manual trigger\nTo trigger a one-off run from the n8n UI:\n1. Open **Every Monday 06:00** node\n2. Click **Execute node** (play button)\n3. Or run from terminal:\n   `python main.py --full-run`\n\n## Required env vars\n- `SLACK_WEBHOOK_URL` — ops channel webhook\n- `SLACK_EXEC_WEBHOOK_URL` — exec channel webhook (RED alerts)\n- `LOG_VIEWER_URL` — deep-link for failure alerts\n- `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD` — email distribution\n\n## Deployment path\nDefault: `/opt/board-report-generator`\nChange the `command` field in **Run Full Pipeline** to match your deployment path."
+      }
+    }
+  ],
+  "connections": {
+    "Every Monday 06:00": {
+      "main": [
+        [
+          {
+            "node": "Run Full Pipeline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Full Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Pipeline Succeeded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pipeline Succeeded?": {
+      "main": [
+        [
+          {
+            "node": "Slack — Pipeline OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack — Pipeline FAILED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack — Pipeline OK": {
+      "main": [
+        [
+          {
+            "node": "Any RED KPIs?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any RED KPIs?": {
+      "main": [
+        [
+          {
+            "node": "Slack — RED KPI Executive Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "last",
+    "saveDataErrorExecution": "all",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": ["board-report", "finance", "automation", "weekly"],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}

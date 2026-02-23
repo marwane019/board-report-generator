@@ -1,0 +1,126 @@
+# =============================================================================
+# Board Report Narrative Templates
+# =============================================================================
+# Templates use {placeholder} syntax and conditional blocks that the
+# narrative.py engine resolves based on RAG status and metric values.
+# =============================================================================
+
+executive_summary:
+  green_above_budget: >
+    {company} delivered a strong performance in {period}, with revenue of {rev_actual}
+    ({rev_variance_pct} ahead of budget). EBITDA of {ebitda_actual} represents a margin
+    of {ebitda_margin_pct}, {ebitda_vs_budget} versus the {ebitda_budget} plan.
+    The business continues to execute well across both its commercial and operational
+    objectives, with the pipeline at {coverage_ratio}x quarterly coverage and ARR
+    reaching {arr}.
+
+  amber_slight_miss: >
+    {company} recorded revenue of {rev_actual} in {period}, {rev_variance_abs} ({rev_variance_pct})
+    below budget, reflecting softer-than-anticipated performance in {weak_revenue_line}.
+    EBITDA of {ebitda_actual} delivered a {ebitda_margin_pct} margin, {ebitda_vs_budget}
+    versus plan. The Board notes that pipeline coverage of {coverage_ratio}x and win rate
+    of {win_rate_pct} remain areas requiring management focus in the near term.
+
+  red_material_miss: >
+    {company} experienced a challenging period in {period}, with revenue of {rev_actual}
+    representing a {rev_variance_abs} shortfall against the {rev_budget} budget.
+    Whilst EBITDA was {ebitda_actual}, immediate corrective action has been initiated
+    across the commercial organisation. Management is implementing a structured recovery
+    plan, details of which are set out in the Outlook section of this report.
+
+financial_performance:
+  revenue_narrative:
+    above_budget: >
+      Monthly revenue of {rev_actual} exceeded the {rev_budget} budget by {rev_variance_abs}
+      ({rev_variance_pct}). On a year-over-year basis, revenue grew {yoy_growth_pct}
+      versus the prior-year comparative of {rev_prior_year}. {saas_comment}
+    on_budget: >
+      Revenue of {rev_actual} was in line with the {rev_budget} budget (variance {rev_variance_abs},
+      {rev_variance_pct}). Year-over-year growth of {yoy_growth_pct} reflects continued
+      progress against the {annual_growth_target}% annual growth target.
+    below_budget: >
+      Revenue of {rev_actual} fell {rev_variance_abs} ({rev_variance_pct}) short of the
+      {rev_budget} budget. The primary driver was {weak_revenue_line}, which underperformed
+      by {line_variance_pct}. Management has identified the root cause as {root_cause_placeholder}
+      and corrective measures are in progress.
+
+  ebitda_narrative:
+    healthy_margin: >
+      EBITDA of {ebitda_actual} represents a {ebitda_margin_pct} margin, {margin_vs_budget_pp}pp
+      {above_below} the {ebitda_budget_margin_pct} budget. Gross margin of {gross_margin_pct}
+      reflects {gm_driver}. Operating expenditure of {opex_actual} was {opex_variance_pct}
+      {above_below_opex} budget, with the variance primarily driven by {opex_driver}.
+    compressed_margin: >
+      EBITDA margin of {ebitda_margin_pct} is {margin_vs_budget_pp}pp below the
+      {ebitda_budget_margin_pct} plan. Gross margin of {gross_margin_pct} has been
+      impacted by {gm_pressure}. The Board notes that cost discipline remains a
+      management priority; a full cost review is being undertaken.
+
+  ytd_comment: >
+    Year-to-date, revenue stands at {ytd_rev_actual} against a budget of {ytd_rev_budget}
+    ({ytd_rev_variance_pct} variance). YTD EBITDA of {ytd_ebitda_actual} implies a
+    run-rate margin of {ytd_ebitda_margin_pct}, {ytd_margin_vs_plan} the full-year plan.
+
+commercial_performance:
+  pipeline_narrative:
+    strong_pipeline: >
+      The total sales pipeline stands at {pipeline_total}, representing {coverage_ratio}x
+      coverage of the quarterly revenue target — comfortably above the 3.0x minimum threshold.
+      New pipeline generation over the last four weeks of {new_pipeline_4w} reflects healthy
+      commercial momentum. Win rate of {win_rate_pct} is {win_rate_vs_budget_pp}pp
+      {above_below} budget, with an average deal size of {avg_deal_size}.
+    weak_pipeline: >
+      Pipeline coverage of {coverage_ratio}x is below the 3.0x Green threshold, representing
+      a deterioration from recent periods. Total pipeline of {pipeline_total} requires
+      acceleration of new business generation to maintain revenue trajectory.
+      The commercial team has been tasked with a targeted pipeline build programme
+      with fortnightly reporting to ExCo.
+
+customer_metrics:
+  arr_narrative:
+    growing_arr: >
+      Annual Recurring Revenue reached {arr} at the end of {period}, an increase of
+      {net_arr_movement} in the month driven by {new_arr} of new ARR partially offset
+      by {churned_arr} of churn. Monthly churn of {churn_rate_pct} remains {churn_vs_budget}
+      the {churn_budget_pct} budget. The NPS of {nps} reflects {nps_trend_comment}.
+    declining_arr: >
+      ARR of {arr} declined by {net_arr_movement_abs} in the month as churn of {churned_arr}
+      exceeded new ARR additions of {new_arr}. The monthly churn rate of {churn_rate_pct}
+      is elevated versus the {churn_budget_pct} budget and requires immediate Board attention.
+      Customer Success leadership has been briefed and retention playbooks have been activated
+      for all at-risk accounts.
+
+operational_metrics:
+  headcount_narrative:
+    in_budget: >
+      Total headcount of {total_hc} at period end was {hc_variance} {above_below} the
+      {hc_budget} budget. The Engineering function represents the largest headcount at
+      {eng_hc} FTEs. Monthly people costs of {monthly_cost} imply an annualised run rate
+      of {annualised_cost}, against a full-year budget of {annual_cost_budget}.
+      Cost per head of {cph} compares to a budget of {cph_budget}.
+
+outlook_and_risks:
+  standard: >
+    Looking ahead, management remains focused on three strategic priorities:
+    (i) accelerating pipeline build to restore {coverage_ratio}x+ quarterly coverage;
+    (ii) delivering on the product roadmap commitments to support renewal rates;
+    and (iii) maintaining cost discipline while continuing to invest in growth.
+    The Board will receive an updated full-year reforecast at the next scheduled meeting.
+
+  risk_register:
+    - risk: "Revenue concentration"
+      detail: "Top 10 customers represent approximately 38% of ARR"
+      mitigation: "Customer Success QBR programme in place for all strategic accounts"
+      rating: "Medium"
+    - risk: "Pipeline conversion"
+      detail: "Win rate has trended below budget for 2 consecutive periods"
+      mitigation: "Sales methodology review and deal coaching programme initiated"
+      rating: "Medium"
+    - risk: "Cost inflation"
+      detail: "Engineering salary market remains competitive; attrition risk elevated"
+      mitigation: "Compensation benchmarking completed; retention awards approved by RemCo"
+      rating: "Low"
+    - risk: "Macro environment"
+      detail: "Prolonged procurement cycles observed in financial services segment"
+      mitigation: "Segment diversification underway; public sector pipeline being built"
+      rating: "Low"

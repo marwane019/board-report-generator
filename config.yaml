@@ -1,0 +1,183 @@
+# =============================================================================
+# Automated Board Report Generator — Configuration
+# All runtime parameters live here. No hardcoded values in source code.
+# =============================================================================
+
+project:
+  name: "Automated Board Report Generator"
+  version: "1.0.0"
+  company_name: "Acme Group plc"
+  company_tagline: "Commercial & Operational Performance"
+  currency: "GBP"
+  currency_symbol: "£"
+  fiscal_year_start_month: 1   # January
+
+# ---------------------------------------------------------------------------
+# Data paths
+# ---------------------------------------------------------------------------
+paths:
+  raw_data_dir:       "data/raw"
+  output_dir:         "data/output"
+  log_dir:            "logs"
+  templates_dir:      "templates"
+  financials_file:    "data/raw/financials.csv"
+  pipeline_file:      "data/raw/pipeline.csv"
+  headcount_file:     "data/raw/headcount.csv"
+  customers_file:     "data/raw/customers.csv"
+  pdf_filename:       "board_report_{period}.pdf"
+  excel_filename:     "board_data_pack_{period}.xlsx"
+  dashboard_filename: "board_dashboard_{period}.html"
+
+# ---------------------------------------------------------------------------
+# Data simulation parameters
+# ---------------------------------------------------------------------------
+data_simulation:
+  seed: 99
+  months_history: 24
+  # Annual revenue targets (GBP)
+  annual_revenue_budget: 18_500_000
+  annual_revenue_growth_rate: 0.14    # 14% YoY target
+  # Revenue lines (must sum to 1.0)
+  revenue_mix:
+    SaaS_Subscriptions: 0.55
+    Professional_Services: 0.28
+    Support_and_Maintenance: 0.17
+  # COGS as % of revenue (by line)
+  cogs_rates:
+    SaaS_Subscriptions: 0.18
+    Professional_Services: 0.52
+    Support_and_Maintenance: 0.31
+  # OpEx departments as % of revenue (annual budget)
+  opex_budget_pct:
+    Sales: 0.14
+    Marketing: 0.07
+    Engineering: 0.18
+    Operations: 0.06
+    General_and_Admin: 0.05
+  # Headcount by department (budget)
+  headcount_budget:
+    Sales: 22
+    Marketing: 8
+    Engineering: 34
+    Operations: 12
+    General_and_Admin: 6
+    Customer_Success: 9
+  # Salary assumptions (annual, GBP)
+  avg_salary_by_dept:
+    Sales: 65000
+    Marketing: 55000
+    Engineering: 82000
+    Operations: 48000
+    General_and_Admin: 52000
+    Customer_Success: 50000
+  # Customer metrics
+  starting_arr: 9_200_000
+  monthly_churn_rate_budget: 0.012  # 1.2% monthly
+  monthly_new_arr_budget: 185_000
+  nps_target: 42
+  # Pipeline assumptions
+  weekly_new_pipeline_budget: 480_000
+  pipeline_win_rate_budget: 0.27
+  avg_deal_size_budget: 42_000
+  # Seasonality index by month (1.0 = average)
+  seasonality:
+    - 0.82  # Jan
+    - 0.87  # Feb
+    - 0.95  # Mar
+    - 0.98  # Apr
+    - 1.02  # May
+    - 1.05  # Jun
+    - 0.88  # Jul
+    - 0.85  # Aug
+    - 1.03  # Sep
+    - 1.08  # Oct
+    - 1.10  # Nov
+    - 1.17  # Dec
+
+# ---------------------------------------------------------------------------
+# KPI thresholds for RAG (Red / Amber / Green) status
+# ---------------------------------------------------------------------------
+rag_thresholds:
+  # Revenue variance vs budget (%)
+  revenue_variance_pct:
+    green: -0.02   # Within 2% of budget = Green
+    amber: -0.08   # -2% to -8% = Amber
+    # Below -8% = Red
+  # EBITDA margin (absolute)
+  ebitda_margin:
+    green: 0.14
+    amber: 0.08
+  # Gross margin (absolute)
+  gross_margin:
+    green: 0.62
+    amber: 0.55
+  # Headcount variance vs budget (%)
+  headcount_variance_pct:
+    green: 0.05
+    amber: 0.10
+  # Monthly churn rate
+  churn_rate:
+    green: 0.015
+    amber: 0.022
+  # Pipeline coverage ratio (pipeline / quarterly revenue target)
+  pipeline_coverage:
+    green: 3.0
+    amber: 2.0
+  # Win rate
+  win_rate:
+    green: 0.25
+    amber: 0.18
+  # NPS score
+  nps:
+    green: 35
+    amber: 20
+
+# ---------------------------------------------------------------------------
+# Report sections and layout
+# ---------------------------------------------------------------------------
+report:
+  sections:
+    - executive_summary
+    - financial_performance
+    - commercial_performance
+    - operational_metrics
+    - outlook_and_risks
+  # PDF page size: A4
+  page_width_mm: 210
+  page_height_mm: 297
+  # Brand colours (hex)
+  brand:
+    primary:    "1B3A5C"   # Navy
+    secondary:  "2196A6"   # Teal
+    accent:     "E8505B"   # Red
+    light:      "F4F7FA"   # Light grey
+    text:       "2D3748"   # Dark text
+    green:      "27AE60"
+    amber:      "F39C12"
+    red:        "E74C3C"
+
+# ---------------------------------------------------------------------------
+# Distribution
+# ---------------------------------------------------------------------------
+distribution:
+  # Slack webhook (loaded from .env)
+  slack_channel: "#board-reports"
+  slack_username: "BoardReportBot"
+  slack_icon_emoji: ":bar_chart:"
+  # Email (SMTP config loaded from .env)
+  email_subject: "Board Report — {period} | {company}"
+  email_recipients:
+    - "cfo@acmegroup.com"
+    - "ceo@acmegroup.com"
+    - "board@acmegroup.com"
+
+# ---------------------------------------------------------------------------
+# Scheduler
+# ---------------------------------------------------------------------------
+scheduler:
+  # Monday morning delivery
+  run_day_of_week: "mon"
+  run_time: "06:00"
+  timezone: "Europe/London"
+  max_retries: 3
+  retry_delay_seconds: 300

@@ -1,0 +1,85 @@
+# =============================================================================
+# Board Report Generator — .gitignore
+# =============================================================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+wheels/
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+ENV/
+.env/
+pyvenv.cfg
+
+# --- Environment / secrets ---
+.env
+*.env.local
+*.env.*.local
+secrets.yaml
+credentials.yaml
+
+# --- Project outputs (generated at runtime) ---
+data/raw/*.csv
+data/processed/*.csv
+data/output/*.pdf
+data/output/*.xlsx
+data/output/*.html
+outputs/pdf/*.pdf
+outputs/excel/*.xlsx
+outputs/dashboard/*.html
+logs/
+*.log
+
+# Keep directory structure but not content
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/output/.gitkeep
+!outputs/pdf/.gitkeep
+!outputs/excel/.gitkeep
+!outputs/dashboard/.gitkeep
+
+# --- Testing / Coverage ---
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+
+# --- IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+*.ipynb
+
+# --- Distribution ---
+*.manifest
+*.spec
+MANIFEST
