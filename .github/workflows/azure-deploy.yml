@@ -1,7 +1,7 @@
 # =============================================================================
 # .github/workflows/azure-deploy.yml
 #
-# CI/CD pipeline: Test -> Build Docker -> Push to ACR -> Deploy to App Service
+# CI/CD pipeline: Test -> Build Docker -> Push to ACR -> Deploy to Container Apps
 #
 # Triggers:
 #   push to main/master  -> test + build + deploy
@@ -36,7 +36,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  AZURE_WEBAPP_NAME: board-report-generator-app
+  CONTAINER_APP_NAME: board-report-app
   RESOURCE_GROUP: rg-board-report
   IMAGE_NAME: board-report-generator
   PYTHON_VERSION: "3.11"
@@ -78,12 +78,11 @@ jobs:
             --cov-report=xml \
             --cov-fail-under=35
 
-
 # =============================================================================
 # Job 2: Build + Push + Deploy  (push to main/master or manual dispatch only)
 # =============================================================================
   build-and-deploy:
-    name: Build and Deploy to Azure
+    name: Build and Deploy to Azure Container Apps
     needs: test
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -122,18 +121,23 @@ jobs:
           docker push "${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest"
           docker push "${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
 
-      # Set App Service environment variables via az CLI
-      # Using az CLI directly avoids YAML nesting issues with the action's JSON input
-      - name: Configure App Service environment variables
+      # Install the Container Apps Azure CLI extension
+      - name: Install containerapp CLI extension
+        run: az extension add --name containerapp --yes --only-show-errors
+
+      # Deploy the new image revision to Container Apps
+      # --image uses the immutable SHA tag for precise rollbacks
+      - name: Deploy to Azure Container Apps
         run: |
-          az webapp config appsettings set \
-            --name "${{ env.AZURE_WEBAPP_NAME }}" \
+          az containerapp update \
+            --name "${{ env.CONTAINER_APP_NAME }}" \
             --resource-group "${{ env.RESOURCE_GROUP }}" \
-            --settings \
-              WEBSITES_PORT=8000 \
+            --image "${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" \
+            --set-env-vars \
               PYTHONUNBUFFERED=1 \
               MPLBACKEND=Agg \
               LOG_LEVEL=INFO \
+              PORT=8000 \
               SMTP_HOST="${{ secrets.SMTP_HOST }}" \
               SMTP_PORT="${{ secrets.SMTP_PORT || '587' }}" \
               SMTP_USER="${{ secrets.SMTP_USER }}" \
@@ -141,22 +145,32 @@ jobs:
               SLACK_WEBHOOK_URL="${{ secrets.SLACK_WEBHOOK_URL }}" \
             --output none
 
-      # Deploy the SHA-tagged image; SHA tag enables precise rollback
-      - name: Deploy container to Azure App Service
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          images: "${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
-
-      # Confirm the app is running after deployment
+      # Verify the app is running and show its public URL
       - name: Verify deployment
         run: |
-          az webapp show \
-            --name "${{ env.AZURE_WEBAPP_NAME }}" \
+          az containerapp show \
+            --name "${{ env.CONTAINER_APP_NAME }}" \
             --resource-group "${{ env.RESOURCE_GROUP }}" \
-            --query "{state:state, hostName:defaultHostName, lastModified:lastModifiedTimeUtc}" \
+            --query "{provisioningState:properties.provisioningState,runningStatus:properties.runningStatus,fqdn:properties.configuration.ingress.fqdn}" \
             --output table
-          echo "Deployed: ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+
+          FQDN=$(az containerapp show \
+            --name "${{ env.CONTAINER_APP_NAME }}" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --query "properties.configuration.ingress.fqdn" -o tsv)
+
+          echo "App URL: https://${FQDN}"
+          echo "Health:  https://${FQDN}/health"
+          echo "Deployed image: ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+
+          # Poll /health until 200 or timeout (90s)
+          for i in $(seq 1 9); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://${FQDN}/health" 2>/dev/null || echo "000")
+            echo "Attempt ${i}/9 -> HTTP ${STATUS}"
+            [ "$STATUS" = "200" ] && echo "Health check passed!" && break
+            [ "$i" = "9" ] && echo "WARNING: Health check did not return 200 within 90s" && exit 1
+            sleep 10
+          done
 
       - name: Log out of Azure
         if: always()
