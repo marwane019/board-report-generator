@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meridian Corp — Executive Board Dashboard | Week 8, 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<style>
+:root{--bg:#0d1117;--card:#1c2128;--border:#30363d;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--amber:#d29922;--text:#e6edf3;--muted:#8b949e;--font:'Segoe UI',system-ui,sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font)}
+.header{background:linear-gradient(135deg,#161b22 0%,#1c2128 100%);border-bottom:1px solid var(--border);padding:24px 40px;display:flex;justify-content:space-between;align-items:center}
+.header-left h1{font-size:22px;font-weight:700;letter-spacing:-0.3px}
+.header-left p{color:var(--muted);font-size:13px;margin-top:3px}
+.header-right{display:flex;gap:12px;align-items:center}
+.badge{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(88,166,255,.12);color:var(--accent);border:1px solid rgba(88,166,255,.3)}
+.badge.live{background:rgba(63,185,80,.12);color:var(--green);border-color:rgba(63,185,80,.3)}
+.alert-banner{background:rgba(248,81,73,.08);border-bottom:1px solid rgba(248,81,73,.2);padding:10px 40px;display:flex;align-items:center;gap:10px;font-size:13px}
+.alert-dot{width:8px;height:8px;background:var(--red);border-radius:50%;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.container{max-width:1400px;margin:0 auto;padding:32px 40px}
+.section-title{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px 24px;position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent)}
+.kpi-card.green::before{background:var(--green)}.kpi-card.red::before{background:var(--red)}.kpi-card.amber::before{background:var(--amber)}
+.kpi-label{font-size:11px;color:var(--muted);text-transform:uppercase}
+.kpi-value{font-size:28px;font-weight:700;margin:8px 0 4px;letter-spacing:-1px}
+.kpi-delta{font-size:13px;font-weight:500}
+.kpi-delta.up{color:var(--green)}.kpi-delta.down{color:var(--red)}.kpi-delta.neutral{color:var(--amber)}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.chart-grid-2{display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px}
+.chart-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:20px}
+.chart-grid-eq{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px}
+.chart-card h3{font-size:13px;font-weight:600;margin-bottom:4px}
+.chart-card p{font-size:11px;color:var(--muted);margin-bottom:16px}
+.anomaly-table{width:100%;border-collapse:collapse;font-size:13px}
+.anomaly-table th{text-align:left;padding:8px 12px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)}
+.anomaly-table td{padding:10px 12px;border-bottom:1px solid rgba(48,54,61,.5)}
+.anomaly-table tr:last-child td{border-bottom:none}
+.sev{padding:3px 9px;border-radius:12px;font-size:11px;font-weight:600}
+.sev.hi{background:rgba(248,81,73,.15);color:var(--red)}
+.sev.me{background:rgba(210,153,34,.15);color:var(--amber)}
+.sev.lo{background:rgba(63,185,80,.15);color:var(--green)}
+.footer{margin-top:40px;padding:20px 40px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.footer a{color:var(--accent);text-decoration:none}
+@media(max-width:900px){.kpi-grid{grid-template-columns:1fr 1fr}.chart-grid-2,.chart-grid-3,.chart-grid-eq{grid-template-columns:1fr}.header,.container,.footer{padding:16px 20px}}
+</style>
+</head>
+<body>
+<div class="header">
+<div class="header-left"><h1>Meridian Corp — Executive Board Dashboard</h1><p>Automated weekly board pack · Week 8, 2026 · Generated Mon 23 Feb 06:00 GMT</p></div>
+<div class="header-right"><span class="badge live">● Live Service</span><span class="badge">board-report-generator</span><span style="font-size:11px;color:var(--muted)">Azure Container Apps</span></div>
+</div>
+<div class="alert-banner"><div class="alert-dot"></div><strong>3 anomalies detected this week</strong> — Supplier overcharge (£18.4k), SLA breach (Vendor C, 4.2 days), Duplicate invoice cluster. See detail below.</div>
+<div class="container">
+<div class="section-title">Key Performance Indicators — Week 8, 2026</div>
+<div class="kpi-grid">
+<div class="kpi-card green"><div class="kpi-label">Revenue (MTD)</div><div class="kpi-value">£4.82M</div><div class="kpi-delta up">▲ +12.3% vs last month</div><div class="kpi-sub">Target: £4.5M · On track ✓</div></div>
+<div class="kpi-card amber"><div class="kpi-label">Gross Margin</div><div class="kpi-value">38.6%</div><div class="kpi-delta neutral">▼ -1.2pp vs last month</div><div class="kpi-sub">Target: 40% · Watch ⚠</div></div>
+<div class="kpi-card red"><div class="kpi-label">Cost Leakage</div><div class="kpi-value">£31.7k</div><div class="kpi-delta down">▲ +26% vs last week</div><div class="kpi-sub">Flagged anomalies · Action required ✗</div></div>
+<div class="kpi-card"><div class="kpi-label">SLA Compliance</div><div class="kpi-value">91.4%</div><div class="kpi-delta up">▲ +2.1pp vs last month</div><div class="kpi-sub">Target: 95% · Improving →</div></div>
+</div>
+<div class="section-title">Revenue & Profitability</div>
+<div class="chart-grid-2">
+<div class="chart-card"><h3>Monthly Revenue vs Target</h3><p>Actuals (blue), targets (dashed) and forecast (orange) — 13-month rolling view</p><div id="chart-revenue"></div></div>
+<div class="chart-card"><h3>Margin Waterfall — Feb 2026</h3><p>Gross to EBITDA bridge</p><div id="chart-waterfall"></div></div>
+</div>
+<div class="section-title">Cost & Procurement Intelligence</div>
+<div class="chart-grid-3">
+<div class="chart-card"><h3>Spend by Category</h3><p>YTD allocation</p><div id="chart-donut"></div></div>
+<div class="chart-card"><h3>Weekly Cost Trend</h3><p>Actual vs budget — last 12 weeks</p><div id="chart-cost-trend"></div></div>
+<div class="chart-card"><h3>Supplier Performance Index</h3><p>Composite score</p><div id="chart-supplier"></div></div>
+</div>
+<div class="section-title">Operational Performance</div>
+<div class="chart-grid-eq">
+<div class="chart-card"><h3>Volume & Throughput — Daily</h3><p>Orders vs capacity band</p><div id="chart-volume"></div></div>
+<div class="chart-card"><h3>SLA Compliance Heatmap</h3><p>By service line & week</p><div id="chart-heatmap"></div></div>
+</div>
+<div class="section-title">Detected Anomalies — Requires Board Attention</div>
+<div class="chart-card" style="margin-bottom:20px"><h3>Anomaly Summary — Week 8</h3><p>Auto-flagged by cost-leakage-detector</p>
+<table class="anomaly-table"><thead><tr><th>Type</th><th>Supplier / Reference</th><th>Amount</th><th>Detected</th><th>Severity</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Supplier Overcharge</td><td>Apex Logistics Ltd</td><td style="color:var(--red);font-weight:600">£18,420</td><td>Mon 23 Feb</td><td><span class="sev hi">HIGH</span></td><td>🔴 Escalated</td></tr>
+<tr><td>Duplicate Invoices</td><td>INV-2024-0891 / INV-2024-0891B</td><td style="color:var(--amber);font-weight:600">£9,100</td><td>Mon 23 Feb</td><td><span class="sev hi">HIGH</span></td><td>🟡 Finance review</td></tr>
+<tr><td>SLA Breach</td><td>Vendor C — Tier 1</td><td>4.2 day delay</td><td>Fri 21 Feb</td><td><span class="sev me">MEDIUM</span></td><td>🟡 Contract review</td></tr>
+<tr><td>Volume Spike</td><td>SKU-887 — North Region</td><td>+340% vs 4-week avg</td><td>Wed 19 Feb</td><td><span class="sev lo">LOW</span></td><td>🟢 Monitored</td></tr>
+<tr><td>Margin Compression</td><td>Product Line D</td><td>-4.2pp MoM</td><td>Mon 23 Feb</td><td><span class="sev me">MEDIUM</span></td><td>🟡 Pricing review</td></tr>
+</tbody></table></div>
+</div>
+<div class="footer"><span>Generated by <strong>board-report-generator</strong> · APScheduler Mon 06:00 GMT · Azure Container Apps · Docker · GitHub Actions CI/CD</span>
+<span><a href="https://github.com/marwane019/board-report-generator" target="_blank">View source</a> · <a href="https://board-report-app.agreeablerock-fccd010a.uksouth.azurecontainerapps.io/health" target="_blank">Service health</a></span></div>
+<script>
+const cfg={responsive:true,displayModeBar:false};
+const dl=(e={})=>({paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#8b949e',family:'Segoe UI,system-ui,sans-serif',size:11},margin:{t:10,r:10,b:40,l:50},xaxis:{gridcolor:'#21262d',linecolor:'#30363d'},yaxis:{gridcolor:'#21262d',linecolor:'#30363d'},showlegend:true,legend:{bgcolor:'transparent',font:{color:'#8b949e',size:10}},...e});
+const mo=['Feb-25','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan-26','Feb-26'];
+const rev=[3.12,3.41,3.55,3.78,4.02,3.89,4.15,4.33,4.08,4.51,4.62,4.29,4.82];
+const tgt=[3.2,3.4,3.6,3.8,4,4,4.1,4.2,4.3,4.4,4.5,4.5,4.5];
+const fct=[null,null,null,null,null,null,null,null,null,null,null,null,4.82,5.05,5.18];
+Plotly.newPlot('chart-revenue',[{x:mo,y:tgt,name:'Target',mode:'lines',line:{dash:'dot',color:'#30363d',width:2}},{x:mo,y:rev.map((v,i)=>i<12?v:null),name:'Actual',mode:'lines+markers',line:{color:'#58a6ff',width:2.5},marker:{size:5}},{x:[...mo,'Mar-26','Apr-26'],y:fct,name:'Forecast',mode:'lines',line:{dash:'dash',color:'#f0883e',width:2}}],{...dl(),yaxis:{...dl().yaxis,tickprefix:'£',tickformat:'.2f',ticksuffix:'M'},height:260},cfg);
+Plotly.newPlot('chart-waterfall',[{type:'waterfall',orientation:'v',x:['Revenue','COGS','Labour','Overheads','Anomalies','EBITDA'],y:[100,-37.2,-14.6,-8.8,-0.8,0],measure:['absolute','relative','relative','relative','relative','total'],text:['100%','-37.2%','-14.6%','-8.8%','-0.8%','38.6%'],textposition:'outside',connector:{line:{color:'#30363d'}},increasing:{marker:{color:'#3fb950'}},decreasing:{marker:{color:'#f85149'}},totals:{marker:{color:'#58a6ff'}}}],{...dl({margin:{t:20,r:20,b:40,l:40}}),height:260,showlegend:false},cfg);
+Plotly.newPlot('chart-donut',[{type:'pie',hole:.55,labels:['Labour','Technology','Logistics','Raw Materials','Facilities','Other'],values:[34,18,22,14,8,4],marker:{colors:['#58a6ff','#3fb950','#f0883e','#bc8cff','#39d353','#f85149']},textinfo:'label+percent'}],{...dl({margin:{t:10,r:10,b:10,l:10},showlegend:false}),height:220},cfg);
+const wks=['W-11','W-10','W-9','W-8','W-7','W-6','W-5','W-4','W-3','W-2','W-1','W0'];
+const act=[271,283,290,278,285,281,289,294,302,298,311,318];
+Plotly.newPlot('chart-cost-trend',[{x:wks,y:Array(12).fill(285),name:'Budget',mode:'lines',line:{dash:'dot',color:'#30363d',width:2}},{x:wks,y:act,name:'Actual',mode:'lines+markers',line:{color:'#f85149',width:2},marker:{size:4},fill:'tonexty',fillcolor:'rgba(248,81,73,.06)'}],{...dl({margin:{t:10,r:10,b:35,l:45}}),yaxis:{...dl().yaxis,tickprefix:'£',ticksuffix:'k'},height:220},cfg);
+const sup=['Apex Logistics','Vendor B','Vendor C','Meridian Direct','TechParts Ltd','Vendor F'];
+const sc=[58,87,72,94,81,76];
+Plotly.newPlot('chart-supplier',[{type:'bar',x:sc,y:sup,orientation:'h',marker:{color:sc.map(s=>s<65?'#f85149':s<80?'#d29922':'#3fb950')},text:sc.map(String),textposition:'outside'}],{...dl({margin:{t:10,r:40,b:35,l:100}}),xaxis:{...dl().xaxis,range:[0,105]},height:220,showlegend:false},cfg);
+const dys=Array.from({length:28},(_i,i)=>'Feb '+(i+1));
+const vol=dys.map(()=>Math.round(420+Math.random()*180));
+Plotly.newPlot('chart-volume',[{x:dys,y:Array(28).fill(400),name:'Min cap',mode:'lines',line:{color:'transparent'},showlegend:false},{x:dys,y:Array(28).fill(550),name:'Capacity',mode:'lines',fill:'tonexty',fillcolor:'rgba(88,166,255,.07)',line:{color:'transparent'}},{x:dys,y:vol,name:'Orders',mode:'lines+markers',line:{color:'#58a6ff',width:2},marker:{size:3.5}}],{...dl({margin:{t:10,r:10,b:40,l:45}}),height:260},cfg);
+const svc=['Tier 1 Delivery','Customer Ops','Finance Close','IT Support','Procurement'];
+const hwk=['W-8','W-7','W-6','W-5','W-4','W-3','W-2','W-1'];
+const z=[[97,95,98,96,94,95,97,91],[88,90,87,92,89,91,93,90],[99,99,100,99,98,100,99,98],[82,85,83,87,84,88,86,85],[94,93,96,92,91,95,94,93]];
+Plotly.newPlot('chart-heatmap',[{type:'heatmap',z:z,x:hwk,y:svc,colorscale:[[0,'#f85149'],[.5,'#d29922'],[.85,'#3fb950'],[1,'#39d353']],zmin:75,zmax:100,text:z.map(r=>r.map(v=>v+'%')),texttemplate:'%{text}',colorbar:{ticksuffix:'%',tickfont:{color:'#8b949e',size:10},outlinewidth:0,len:.8}}],{...dl({margin:{t:10,r:80,b:40,l:120}}),xaxis:{...dl().xaxis,side:'bottom'},yaxis:{...dl().yaxis,autorange:'reversed'},height:260},cfg);
+</script>
+</body></html>
